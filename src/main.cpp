@@ -36,9 +36,9 @@ int main(int argc, char** argv) {
 	    }
 	}
 
-	lval* res = read(results);
-	print_lval(res);
-	eval(res);
+	lval* exp = read(results);
+	print_lval(exp);
+	std::cout << eval(exp)->num << std::endl;
 	
 	free(input);
     }

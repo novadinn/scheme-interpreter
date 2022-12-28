@@ -9,22 +9,28 @@ enum builtin_type {
     NUMBER
 };
 struct lval;
-typedef lval*(*lfn)(std::vector<lval*>);
+typedef lval*(*lfn)(lval*);
 
 struct lval {
     builtin_type type;
     
-    long num;
-    lfn fn;
-
     std::vector<lval*> list;
+    lfn fn;
+    long num;
 };
 
-void eval(lval* exp);
+lval* eval(lval* exp);
+
+lval* new_lval_sexp(std::vector<lval*> list = std::vector<lval*>());
+lval* new_lval_fn(lfn fn = nullptr);
+lval* new_lval_number(long n = 0);
+
+lval* builtin_add(lval* op);
+lval* builtin_sub(lval* op);
+lval* builtin_div(lval* op);
+lval* builtin_mul(lval* op);
 
 void print_lval(lval* val);
-static void print_lval_rec(lval* val);
-
-lval* builtin_add(std::vector<lval*> args);
+void print_lval_rec(lval* val);
 
 #endif // LVAL_H
