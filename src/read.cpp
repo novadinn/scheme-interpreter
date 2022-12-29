@@ -1,6 +1,5 @@
 #include "read.h"
 
-// NOTE: form lval bindings
 lval* read(const std::vector<std::string>& list) {
     if(list.size() == 0)
 	return nullptr;
@@ -16,19 +15,18 @@ lval* read(const std::vector<std::string>& list) {
 	
 	return new_lval_sexp(rest);
     } else if(exp == "+") { // TODO: if symbol
-	return new_lval_fn(builtin_add);
+	return new_lval_fn(exp, builtin_add);
     } else if(exp == "-") {
-	return new_lval_fn(builtin_sub);
+	return new_lval_fn(exp, builtin_sub);
     } else if(exp == "*") {
-	return new_lval_fn(builtin_mul);
+	return new_lval_fn(exp, builtin_mul);
     } else if(exp == "/") {
-	return new_lval_fn(builtin_div);
+	return new_lval_fn(exp, builtin_div);
     } else if(is_number(exp)) {
-	return new_lval_number(stoi(exp));
+	return new_lval_num(stoi(exp));
     }
 
-    // TODO: error
-    return nullptr;
+    return new_lval_err("Syntax error occured for expression %s", exp);
 }
 
 
@@ -57,7 +55,6 @@ std::vector<std::vector<std::string>> form_lists(const std::vector<std::string>&
 }
 
 std::vector<std::string> unwrap_list(const std::vector<std::string>& list) {
-    // TODO: assert that list[0] == "(" and list[list.size()-1] == ")"
     std::vector<std::string> res(list);
     res.erase(res.begin());
     res.erase(res.begin() + res.size()-1);
@@ -82,4 +79,3 @@ bool is_number(const std::string& s) {
     while (it != s.end() && std::isdigit(*it)) ++it;
     return !s.empty() && it == s.end();
 }
-
