@@ -1,10 +1,10 @@
 #ifndef READ_H
 #define READ_H
 
+#include "lval.h"
+
 #include <vector>
 #include <string>
-
-#include "lval.h"
 
 lval* read(const std::vector<std::string>& list);
 

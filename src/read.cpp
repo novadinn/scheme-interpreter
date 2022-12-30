@@ -15,18 +15,18 @@ lval* read(const std::vector<std::string>& list) {
 	
 	return new_lval_sexp(rest);
     } else if(exp == "+") { // TODO: if symbol
-	return new_lval_fn(exp, builtin_add);
+	return new_lval_fn(builtin_add);
     } else if(exp == "-") {
-	return new_lval_fn(exp, builtin_sub);
+	return new_lval_fn(builtin_sub);
     } else if(exp == "*") {
-	return new_lval_fn(exp, builtin_mul);
+	return new_lval_fn(builtin_mul);
     } else if(exp == "/") {
-	return new_lval_fn(exp, builtin_div);
+	return new_lval_fn(builtin_div);
     } else if(is_number(exp)) {
 	return new_lval_num(stoi(exp));
     }
 
-    return new_lval_err("Syntax error occured for expression %s", exp);
+    return new_lval_sym(exp);
 }
 
 

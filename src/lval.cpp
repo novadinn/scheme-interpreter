@@ -3,24 +3,28 @@
 #include <iostream>
 #include <stdarg.h>
 
-lval* eval(lval* exp) {
+// TODO: use local env
+lval* eval(lval* exp, lenv* env) {
     switch(exp->type) {
     case ltype::SEXP: {
 	std::vector<lval*> args;
 	lval* op = exp->list[0];
 	
 	for(int i = 1; i < exp->list.size(); ++i) {
-	    args.push_back(eval(exp->list[i]));
+	    args.push_back(eval(exp->list[i], env));
 	}
 	op->list = args;
-	
-	return eval(op);
+
+	return eval(op, env);
     } break;
     case ltype::FN: {
 	return exp->fn(exp);
     } break;
     case ltype::NUM: {
 	return exp;
+    } break;
+    case ltype::SYM: {
+	return eval(search_lenv(env, exp->sym), env);
     } break;
     case ltype::ERR: {
 	printf("%s\n", exp->err);
@@ -39,11 +43,10 @@ lval* new_lval_sexp(std::vector<lval*> list) {
     return val;
 }
 
-lval* new_lval_fn(std::string sym, lfn fn) {
+lval* new_lval_fn(lfn fn) {
     lval* val = new lval();
     val->type = ltype::FN;
     val->fn = fn;
-    val->name = sym;
     
     return val;
 }
@@ -52,6 +55,14 @@ lval* new_lval_num(long n) {
     lval* val = new lval();
     val->type = ltype::NUM;
     val->num = n;
+    
+    return val;
+}
+
+lval* new_lval_sym(std::string sym) {
+    lval* val = new lval();
+    val->type = ltype::SYM;
+    val->sym = sym;
     
     return val;
 }
@@ -90,7 +101,7 @@ lval* builtin_add(lval* op) {
     
     for(int i = 0; i < op->list.size(); ++i) {
 	lval* val = op->list[i];
-	LTYPE_ASSERT(op->name, op, i, ltype::NUM);
+	LTYPE_ASSERT("+", op, i, ltype::NUM);
 	res += val->num;
     }
 
@@ -103,8 +114,8 @@ lval* builtin_sub(lval* op) {
 	return new_lval_num(-res);
     
     for(int i = 1; i < op->list.size(); ++i) {
-	lval* val = eval(op->list[i]);
-	LTYPE_ASSERT(op->name, op, i, ltype::NUM);
+	lval* val = op->list[i];
+	LTYPE_ASSERT("-", op, i, ltype::NUM);
 	res -= val->num;
     }
 
@@ -115,8 +126,8 @@ lval* builtin_div(lval* op) {
     long res = op->list[0]->num;
     
     for(int i = 1; i < op->list.size(); ++i) {
-	lval* val = eval(op->list[i]);
-	LTYPE_ASSERT(op->name, op, i, ltype::NUM);
+	lval* val = op->list[i];
+	LTYPE_ASSERT("/", op, i, ltype::NUM);
 	res /= val->num;
     }
 
@@ -127,8 +138,8 @@ lval* builtin_mul(lval* op) {
     long res = op->list[0]->num;
     
     for(int i = 1; i < op->list.size(); ++i) {
-	lval* val = eval(op->list[i]);
-	LTYPE_ASSERT(op->name, op, i, ltype::NUM);
+	lval* val = op->list[i];
+	LTYPE_ASSERT("*", op, i, ltype::NUM);
 	res *= val->num;
     }
 
@@ -145,6 +156,9 @@ std::string ltype_to_str(ltype type) {
     } break;
     case ltype::NUM: {
 	return "Number";
+    } break;
+    case ltype::SYM: {
+	return "Symbol";
     } break;
     case ltype::ERR: {
 	return "Error";
@@ -169,10 +183,13 @@ void print_lval_rec(lval* val) {
 	std::cout << ")";
     } break;
     case ltype::FN: {
-	std::cout << "FN(" << val->name << ")";
+	std::cout << "FN()";
     } break;
     case ltype::NUM: {
 	std::cout << "NUM(" << val->num << ")";
+    } break;
+    case ltype::SYM: {
+	std::cout << "SYM(" << val->sym << ")";
     } break;
     case ltype::ERR: {
 	std::cout << "ERR(" << val->err << ")";

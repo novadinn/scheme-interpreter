@@ -9,6 +9,7 @@
 
 #include "lval.cpp"
 #include "read.cpp"
+#include "lenv.cpp"
 
 int main(int argc, char** argv) {
     while (true) {
@@ -36,9 +37,12 @@ int main(int argc, char** argv) {
 	    }
 	}
 
+	lenv* global_env = new_lenv();
+	lval* num = new_lval_num(15);
+	push_lenv(global_env, num, "x");
 	lval* exp = read(results);
 	print_lval(exp);
-	std::cout << eval(exp)->num << std::endl;
+	std::cout << eval(exp, global_env)->num << std::endl;
 	
 	free(input);
     }
