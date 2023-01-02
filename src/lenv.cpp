@@ -1,5 +1,7 @@
 #include "lenv.h"
 
+#include "lval.h"
+
 lenv* new_lenv(lenv* par) {
     lenv* e = new lenv();
     e->par = par;
@@ -21,6 +23,7 @@ lval* search_lenv(lenv* e, std::string name) {
 }
 
 void push_lenv(lenv* e, lval* val, std::string name) {
+    // TODO: check if val is already in env
     e->vals.push_back(val);
     e->names.push_back(name);
     ++e->count;

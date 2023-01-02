@@ -8,10 +8,14 @@
 #include <editline/history.h>
 
 #include "lval.cpp"
-#include "read.cpp"
 #include "lenv.cpp"
+#include "eval.cpp"
+#include "read.cpp"
+#include "builtins.cpp"
 
 int main(int argc, char** argv) {
+    lenv* global_env = new_lenv();
+    
     while (true) {
 	char* input = readline("scheme> ");
 	add_history(input);
@@ -20,29 +24,44 @@ int main(int argc, char** argv) {
 	std::vector<std::string> list(std::istream_iterator<std::string>{iss},
 					 std::istream_iterator<std::string>());
 
+	// TODO: ( + 1 2 ) will not work - we need remove those spaced by hand
 	std::vector<std::string> results;
 	for(int i = 0; i < list.size(); ++i) {
 	    std::string exp = list[i];
-	    
-	    int paran = rm_occurs(exp, '(');
-	    for(int j = 0; j < paran; ++j) {
-		results.push_back("(");
+
+	    for(int j = 0; j < exp.size(); ++j) {
+		if(exp[j] == '(') {
+		    exp.erase(j--, 1);
+		    results.push_back("(");
+		} else if(exp[j] == '\'') {
+		    exp.erase(j--, 1);
+		    results.push_back("'");
+		}
 	    }
 
-	    paran = rm_occurs(exp, ')');
+	    int nc = 0;
+	    for(int j = 0; j < exp.size(); ++j) {
+		if(exp[j] == ')') {
+		    nc++;
+		    exp.erase(j--, 1);
+		}
+	    }
+	    
 	    results.push_back(exp);
 
-	    for(int j = 0; j < paran; ++j) {
+	    for(int j = 0; j < nc; ++j) {
 		results.push_back(")");
 	    }
 	}
 
-	lenv* global_env = new_lenv();
-	lval* num = new_lval_num(15);
-	push_lenv(global_env, num, "x");
+	for(int j = 0; j < results.size(); ++j) {
+	    printf("%s ", results[j].c_str());
+	}
+	printf("\n");
+
 	lval* exp = read(results);
 	print_lval(exp);
-	std::cout << eval(exp, global_env)->num << std::endl;
+	print_lval(eval(exp, global_env));
 	
 	free(input);
     }

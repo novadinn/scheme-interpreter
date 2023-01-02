@@ -8,10 +8,16 @@
 
 lval* read(const std::vector<std::string>& list);
 
-std::vector<std::vector<std::string>> form_lists(const std::vector<std::string>& list);
-std::vector<std::string> unwrap_list(const std::vector<std::string>& list);
+lval* read_sexp(const std::vector<std::string>& list);
+lval* read_qexp(const std::vector<std::string>& list);
+lval* read_fn(const std::string& exp);
+lval* read_num(const std::string& exp);
+lval* read_sym(const std::string& exp);
 
-int rm_occurs(std::string& s, char c);
-bool is_number(const std::string& s);
+bool sexp_p(const std::string& exp);
+bool qexp_p(const std::string& exp);
+bool fn_p(const std::string& exp);
+bool num_p(const std::string& exp);
+bool sym_p(const std::string& exp);
 
 #endif // READ_H

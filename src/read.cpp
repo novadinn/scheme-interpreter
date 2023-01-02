@@ -1,20 +1,115 @@
 #include "read.h"
 
+#include "builtins.h"
+
 lval* read(const std::vector<std::string>& list) {
     if(list.size() == 0)
 	return nullptr;
     
     std::string exp = list[0];
+
+    if(sexp_p(exp)) {
+	return read_sexp(list);
+    } else if(qexp_p(exp)) {
+	return read_qexp(list);
+    } else if(fn_p(exp)) {
+	return read_fn(exp);
+    } else if(num_p(exp)) {
+	return read_num(exp);
+    } else if(sym_p(exp)) {
+	return read_sym(exp);
+    }
+
+    return new_lval_err("A syntax error has occured");
+}
+
+lval* read_sexp(const std::vector<std::string>& list) {
+    std::vector<std::string> unwr(list);
+    unwr.erase(unwr.begin());
+    unwr.erase(unwr.begin() + unwr.size()-1);
+
+    std::vector<std::vector<std::string>> res;
+    std::vector<std::string> cur;
+    int nparan = 0;
+    bool qexp = false;
     
-    if(exp == "(") {
-	std::vector<std::vector<std::string>> lists = form_lists(unwrap_list(list));
-	std::vector<lval*> rest;
-	for(int i = 0; i < lists.size(); ++i) {
-	    rest.push_back(read(lists[i]));
+    for(int i = 0; i < unwr.size(); ++i) {
+	std::string exp = unwr[i];
+
+	if(qexp) {
+	    qexp = false;
+	    --nparan;
 	}
 	
-	return new_lval_sexp(rest);
-    } else if(exp == "+") { // TODO: if symbol
+	if(exp == "'") {
+	    qexp = true;
+	    ++nparan;
+	} else if(exp == "(") {
+	    ++nparan;
+	} else if(exp == ")") {
+	    --nparan;
+	}
+
+	cur.push_back(exp);
+	
+	if(nparan == 0) {
+	    res.push_back(cur);
+	    cur.clear();
+	}
+    }
+
+    std::vector<lval*> rest;
+    for(int i = 0; i < res.size(); ++i) {
+	rest.push_back(read(res[i]));
+    }
+	
+    return new_lval_sexp(rest);
+}
+
+lval* read_qexp(const std::vector<std::string>& list) {
+    std::vector<std::string> unwr(list);
+    unwr.erase(unwr.begin());
+    unwr.erase(unwr.begin());
+    unwr.erase(unwr.begin() + unwr.size()-1);
+    
+    std::vector<std::vector<std::string>> res;
+    std::vector<std::string> cur;
+    int nparan = 0;
+    
+    for(int i = 0; i < unwr.size(); ++i) {
+	std::string exp = unwr[i];
+	
+	if(exp == "(") {
+	    cur.push_back("'");
+	    ++nparan;
+	} else if(exp == ")") {
+	    --nparan;
+	}
+
+	cur.push_back(exp);
+	
+	if(nparan == 0) {
+	    res.push_back(cur);
+	    cur.clear();
+	}
+    }
+
+    std::vector<lval*> rest;
+    for(int i = 0; i < res.size(); ++i) {
+	rest.push_back(read(res[i]));
+    }
+
+    return new_lval_qexp(rest);
+}
+
+lval* read_fn(const std::string& exp) {
+    if(exp == "define") {
+	return new_lval_fn(builtin_define);
+    } else if(exp == "car") {
+	return new_lval_fn(builtin_car);
+    } else if(exp == "cdr") {
+	return new_lval_fn(builtin_cdr);
+    } else if(exp == "+") {
 	return new_lval_fn(builtin_add);
     } else if(exp == "-") {
 	return new_lval_fn(builtin_sub);
@@ -22,60 +117,54 @@ lval* read(const std::vector<std::string>& list) {
 	return new_lval_fn(builtin_mul);
     } else if(exp == "/") {
 	return new_lval_fn(builtin_div);
-    } else if(is_number(exp)) {
-	return new_lval_num(stoi(exp));
     }
 
+    return new_lval_err("Unimplemented exception");
+}
+
+lval* read_num(const std::string& exp) {
+    return new_lval_num(stoi(exp));
+}
+
+lval* read_sym(const std::string& exp) {
     return new_lval_sym(exp);
 }
 
+bool sexp_p(const std::string& exp) {
+    return exp == "(";
+}
 
-std::vector<std::vector<std::string>> form_lists(const std::vector<std::string>& list) {
-    std::vector<std::vector<std::string>> res;
-    std::vector<std::string> cur;
-    int nparan = 0;
-    
-    for(int i = 0; i < list.size(); ++i) {
-	std::string exp = list[i];
-	cur.push_back(exp);
-	
-	if(exp == "(") {
-	    ++nparan;
-	} else if(exp == ")") {
-	    --nparan;
-	}
+bool qexp_p(const std::string& exp) {
+    return exp == "'";
+}
 
-	if(nparan == 0) {
-	    res.push_back(cur);
-	    cur.clear();
-	}
+bool fn_p(const std::string& exp) {
+    bool res = false;
+    if(exp == "define") {
+	res = true;
+    } else if(exp == "car") {
+	res = true;
+    } else if(exp == "cdr") {
+	res = true;
+    } else if(exp == "+") {
+	res = true;
+    } else if(exp == "-") {
+	res = true;
+    } else if(exp == "*") {
+	res = true;
+    } else if(exp == "/") {
+	res = true;
     }
 
     return res;
 }
 
-std::vector<std::string> unwrap_list(const std::vector<std::string>& list) {
-    std::vector<std::string> res(list);
-    res.erase(res.begin());
-    res.erase(res.begin() + res.size()-1);
-    
-    return res;
+bool num_p(const std::string& exp) {
+    std::string::const_iterator it = exp.begin();
+    while (it != exp.end() && std::isdigit(*it)) ++it;
+    return !exp.empty() && it == exp.end();
 }
 
-int rm_occurs(std::string& s, char c) {
-    int n = 0;
-    for(int i = 0; i < s.size(); ++i) {
-	if(s[i] == c) {
-	    s.erase(i--, 1);
-	    ++n;
-	}
-    }
-
-    return n;
-}
-
-bool is_number(const std::string& s) {
-    std::string::const_iterator it = s.begin();
-    while (it != s.end() && std::isdigit(*it)) ++it;
-    return !s.empty() && it == s.end();
+bool sym_p(const std::string& exp) {
+    return true;
 }
