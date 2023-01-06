@@ -1,65 +1,69 @@
 #include "eval.h"
 
-// TODO: use local env
-lval* eval(lval* exp, lenv* env) {
-    switch(exp->type) {
+lval* eval(lval* v, lenv* e) {
+    switch(v->type) {
     case ltype::SEXP: {
-	return eval_sexp(exp, env);
+	return eval_sexp(v, e);
     } break;
     case ltype::QEXP: {
-	return eval_qexp(exp, env);
+	return eval_qexp(v, e);
     } break;
-    case ltype::FN: {
-	return eval_fn(exp, env);
+    case ltype::FUN: {
+	return eval_fun(v, e);
     } break;
     case ltype::NUM: {
-	return eval_num(exp, env);
+	return eval_num(v, e);
+    } break;
+    case ltype::STR: {
+	return eval_str(v, e);
     } break;
     case ltype::SYM: {
-	return eval_sym(exp, env);
+	return eval_sym(v, e);
     } break;
     case ltype::ERR: {
-	return eval_err(exp, env);
+	return eval_err(v, e);
     } break;
     }
 
-    return new_lval_err("Unimplemented exception");
+    return lval_err("Unknown value type %s", ltype_to_str(v->type).c_str());
 }
 
-lval* eval_sexp(lval* exp, lenv* env) {
-    std::vector<lval*> args;
-    lval* op = exp->list[0];
-    LTYPE_ASSERT("eval_sexp", op->type, 0, ltype::FN);
-	
-    for(int i = 1; i < exp->list.size(); ++i) {
-	LNTYPE_ASSERT("eval_sexp", exp->list[i]->type, i, ltype::FN);
-	args.push_back(exp->list[i]->type == ltype::SEXP ?
-		       eval(exp->list[i], env) :
-		       exp->list[i]);
+lval* eval_sexp(lval* v, lenv* e) {
+    llist lst = v->lst;
+    llist args;
+    lval* op = eval(lst[0], e);
+
+    for(int i = 1; i < v->lst.size(); ++i) {
+	args.push_back(lst[i]);
     }
-    op->list = args;
+    op->lst = args;
 
-    return eval(op, env);
+    return eval(op, e);
 }
 
-lval* eval_qexp(lval* exp, lenv* env) {
-    return exp;
+lval* eval_qexp(lval* v, lenv* e) {
+    return v;
 }
 
-lval* eval_fn(lval* exp, lenv* env) {
-    // TODO: if(exp->evn)
-    return exp->fn(exp, env);
+lval* eval_fun(lval* v, lenv* e) {
+    if(v->env && lenv_par_p(e, v->env))
+	return v->fun(v, v->env);
+    return v->fun(v, e);
 }
 
-lval* eval_num(lval* exp, lenv* env) {
-    return exp;
+lval* eval_num(lval* v, lenv* e) {
+    return v;
 }
 
-lval* eval_sym(lval* exp, lenv* env) {
-    return eval(search_lenv(env, exp->sym), env);
+lval* eval_str(lval* v, lenv* e) {
+    return v;
 }
 
-lval* eval_err(lval* exp, lenv* env) {
-    printf("%s\n", exp->err);
-    return exp;
+lval* eval_sym(lval* v, lenv* e) {
+    return lenv_search(e, v->sym);
+}
+
+lval* eval_err(lval* v, lenv* e) {
+    printf("%s\n", v->err);
+    return v;
 }

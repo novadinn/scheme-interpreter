@@ -2,15 +2,15 @@
 #define EVAL_H
 
 #include "lval.h"
-#include "lenv.h"
 
-lval* eval(lval* exp, lenv* env);
+lval* eval(lval* v, lenv* e);
 
-lval* eval_sexp(lval* exp, lenv* env);
-lval* eval_qexp(lval* exp, lenv* env);
-lval* eval_fn(lval* exp, lenv* env);
-lval* eval_num(lval* exp, lenv* env);
-lval* eval_sym(lval* exp, lenv* env);
-lval* eval_err(lval* exp, lenv* env);
+lval* eval_sexp(lval* v, lenv* e);
+lval* eval_qexp(lval* v, lenv* e);
+lval* eval_fun(lval* v, lenv* e);
+lval* eval_num(lval* v, lenv* e);
+lval* eval_str(lval* v, lenv* e);
+lval* eval_sym(lval* v, lenv* e);
+lval* eval_err(lval* v, lenv* e);
 
 #endif // EVAL_H

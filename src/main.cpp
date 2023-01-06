@@ -1,70 +1,71 @@
 #include <iostream>
-#include <cstring>
 #include <string>
-#include <sstream>
-#include <iterator>
 #include <vector>
-#include <editline/readline.h>
-#include <editline/history.h>
 
 #include "lval.cpp"
 #include "lenv.cpp"
-#include "eval.cpp"
 #include "read.cpp"
+#include "eval.cpp"
 #include "builtins.cpp"
 
 int main(int argc, char** argv) {
-    lenv* global_env = new_lenv();
-    
+    // TODO: builtin functions should also be declared in here
+    lenv* genv = lenv_new();
+    lenv_push(genv, "true", lval_num(1));
+    lenv_push(genv, "false", lval_num(0));
+
+    lenv_push(genv, "+", lval_fun(builtin_add, genv));
+    lenv_push(genv, "-", lval_fun(builtin_sub, genv));
+    lenv_push(genv, "*", lval_fun(builtin_mul, genv));
+    lenv_push(genv, "/", lval_fun(builtin_div, genv));
+    lenv_push(genv, "car", lval_fun(builtin_car, genv));
+    lenv_push(genv, "cdr", lval_fun(builtin_cdr, genv));
+    lenv_push(genv, "cons", lval_fun(builtin_cons, genv));
+    lenv_push(genv, "define", lval_fun(builtin_define, genv));
+    lenv_push(genv, "lambda", lval_fun(builtin_lambda, genv));
+   
     while (true) {
-	char* input = readline("scheme> ");
-	add_history(input);
-	
-	std::istringstream iss(input);
-	std::vector<std::string> list(std::istream_iterator<std::string>{iss},
-					 std::istream_iterator<std::string>());
+	std::string input;
 
-	// TODO: ( + 1 2 ) will not work - we need remove those spaced by hand
-	std::vector<std::string> results;
-	for(int i = 0; i < list.size(); ++i) {
-	    std::string exp = list[i];
+	printf("scheme> ");
+	getline(std::cin, input);
 
-	    for(int j = 0; j < exp.size(); ++j) {
-		if(exp[j] == '(') {
-		    exp.erase(j--, 1);
-		    results.push_back("(");
-		} else if(exp[j] == '\'') {
-		    exp.erase(j--, 1);
-		    results.push_back("'");
+	// TODO: rn it can only read sexp - just trying to read any primitive element will not work
+	std::vector<std::string> lst;
+	std::string wrd;
+	for(int i = 0; i < input.size(); ++i) {
+	    if(input[i] == '\'') {
+		lst.push_back("'");
+	    } else if(input[i] == '(') {
+		lst.push_back("(");
+	    } else if(input[i] == ')') {
+		if(!wrd.empty()) {
+		    lst.push_back(wrd);
+		    wrd.clear();
 		}
-	    }
-
-	    int nc = 0;
-	    for(int j = 0; j < exp.size(); ++j) {
-		if(exp[j] == ')') {
-		    nc++;
-		    exp.erase(j--, 1);
+		lst.push_back(")");
+	    } else if(input[i] == ' ') {
+		if(!wrd.empty()) {
+		    lst.push_back(wrd);
+		    wrd.clear();
 		}
-	    }
-	    
-	    results.push_back(exp);
-
-	    for(int j = 0; j < nc; ++j) {
-		results.push_back(")");
+	    } else {
+		wrd += input[i];
 	    }
 	}
 
-	for(int j = 0; j < results.size(); ++j) {
-	    printf("%s ", results[j].c_str());
+	for(int i = 0; i < lst.size(); ++i) {
+	    printf("%s ", lst[i].c_str());
 	}
 	printf("\n");
 
-	lval* exp = read(results);
-	print_lval(exp);
-	print_lval(eval(exp, global_env));
-	
-	free(input);
+	lval* ast = read(lst);
+	print_lval(ast);
+	print_lval(eval(ast, genv));
     }
+
+    lenv_del(genv);
     
     return 0;
 }
+

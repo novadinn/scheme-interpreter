@@ -2,39 +2,47 @@
 #define LVAL_H
 
 #include "lenv.h"
-#include "log.h"
-
-#include <vector>
 
 enum ltype {
     SEXP,
     QEXP,
-    FN,
+    FUN,
     NUM,
+    STR,
     SYM,
     ERR
 };
 struct lval;
-typedef lval*(*lfn)(lval*, lenv* env);
+typedef lval*(*lfun)(lval*, lenv*);
+typedef std::vector<lval*> llist;
 
-// TODO: add local env
 struct lval {
     ltype type;
+
+    llist lst;
     
-    std::vector<lval*> list;
-    lfn fn;
-    long num;
+    lfun fun;
+    lenv* env;
+    lval* args;
+    lval* body;
+    
+    double num;
+    
+    std::string str;
+    
     std::string sym;
+    
     char* err;
 };
 
-lval* new_lval_sexp(std::vector<lval*> list = std::vector<lval*>());
-lval* new_lval_qexp(std::vector<lval*> list = std::vector<lval*>());
-lval* new_lval_fn(lfn fn = nullptr);
-lval* new_lval_num(long n = 0);
-lval* new_lval_sym(std::string sym);
-lval* new_lval_err(std::string msg, ...);
-void delete_lval(lval* val);
+lval* lval_sexp(llist lst = llist());
+lval* lval_qexp(llist lst = llist());
+lval* lval_fun(lfun fun = nullptr, lenv* e = nullptr, lval* args = nullptr, lval* body = nullptr);
+lval* lval_num(double n = 0.0);
+lval* lval_str(std::string str = "");
+lval* lval_sym(std::string sym = "");
+lval* lval_err(std::string err = "", ...);
+void lval_del(lval* v);
 
 std::string ltype_to_str(ltype type);
 

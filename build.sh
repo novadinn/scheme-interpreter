@@ -1,1 +1,1 @@
-g++ -o build/scheme-interpreter src/main.cpp -ledit
+g++ -o build/scheme-interpreter src/main.cpp
