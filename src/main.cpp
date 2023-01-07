@@ -52,28 +52,37 @@ int main(int argc, char** argv) {
 
 	printf("scheme> ");
 	getline(std::cin, input);
-
-	// TODO: rn it can only read sexp - just trying to read any primitive element will not work
+	
 	std::vector<std::string> lst;
-	std::string wrd;
+	std::string cw;
+	
 	for(int i = 0; i < input.size(); ++i) {
-	    if(input[i] == '\'') {
-		lst.push_back("'");
-	    } else if(input[i] == '(') {
+	    char s = input[i];
+	    
+	    if(s == '\'') {
+		cw += "'";
+		if(i != input.size()-1)
+		    if(input[i+1] == '(') {
+			cw += "(";
+			++i;
+			lst.push_back(cw);
+			cw.clear();
+		    }
+	    } else if(s == '(') {
 		lst.push_back("(");
-	    } else if(input[i] == ')') {
-		if(!wrd.empty()) {
-		    lst.push_back(wrd);
-		    wrd.clear();
+	    } else if(s == ')') {
+		if(!cw.empty()) {
+		    lst.push_back(cw);
+		    cw.clear();
 		}
 		lst.push_back(")");
-	    } else if(input[i] == ' ') {
-		if(!wrd.empty()) {
-		    lst.push_back(wrd);
-		    wrd.clear();
+	    } else if(s == ' ') {
+		if(!cw.empty()) {
+		    lst.push_back(cw);
+		    cw.clear();
 		}
 	    } else {
-		wrd += input[i];
+		cw += s;
 	    }
 	}
 
@@ -81,7 +90,7 @@ int main(int argc, char** argv) {
 	    printf("%s ", lst[i].c_str());
 	}
 	printf("\n");
-
+	
 	lval* ast = read(lst);
 	print_lval(ast);
 	print_lval(eval(ast, genv));

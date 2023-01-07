@@ -17,6 +17,9 @@ lval* eval(lval* v, lenv* e) {
     case ltype::STR: {
 	return eval_str(v, e);
     } break;
+    case ltype::VAR: {
+	return eval_var(v, e);
+    } break;
     case ltype::SYM: {
 	return eval_sym(v, e);
     } break;
@@ -62,8 +65,12 @@ lval* eval_str(lval* v, lenv* e) {
     return v;
 }
 
+lval* eval_var(lval* v, lenv* e) {
+    return lenv_search(e, v->vname);
+}
+
 lval* eval_sym(lval* v, lenv* e) {
-    return lenv_search(e, v->sym);
+    return v;
 }
 
 lval* eval_bool(lval* v, lenv* e) {

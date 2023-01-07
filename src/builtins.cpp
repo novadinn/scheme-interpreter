@@ -110,10 +110,10 @@ lval* builtin_define(lval* op, lenv* e) {
     LASSERT_ARGC("define", lst, 2);
     
     lval* sym = lst[0];
-    LASSERT_TYPE("define", 0, sym->type, ltype::SYM);
+    LASSERT_TYPE("define", 0, sym->type, ltype::VAR);
     lval* val = eval(lst[1], e);
 
-    lenv_push(e, sym->sym, val);
+    lenv_push(e, sym->vname, val);
     
     return val;
 }
@@ -130,8 +130,8 @@ lval* builtin_lambda(lval* op, lenv* e) {
     lenv* le = lenv_new(e);
     for(int i = 0; i < args->lst.size(); ++i) {
 	lval* unb = args->lst[i];
-	LASSERT_TYPE("lambda", 0, unb->type, ltype::SYM);
-	lenv_push_unb(le, unb->sym);
+	LASSERT_TYPE("lambda", 0, unb->type, ltype::VAR);
+	lenv_push_unb(le, unb->vname);
     }
     
     return lval_fun(builtin_lambda_res, le, args, body);
@@ -144,7 +144,7 @@ lval* builtin_lambda_res(lval* op, lenv* e) {
 
     LASSERT_ARGC("lambda_result", alst, op->lst.size());
     for(int i = 0; i < alst.size(); ++i) {
-	lenv_set_lval(le, alst[i]->sym, eval(op->lst[i], e));
+	lenv_set_lval(le, alst[i]->vname, eval(op->lst[i], e));
     }
     
     return eval(body, le);
