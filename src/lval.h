@@ -10,6 +10,7 @@ enum ltype {
     NUM,
     STR,
     SYM,
+    BOOL,
     ERR
 };
 struct lval;
@@ -31,6 +32,8 @@ struct lval {
     std::string str;
     
     std::string sym;
+
+    bool b;
     
     char* err;
 };
@@ -41,6 +44,7 @@ lval* lval_fun(lfun fun = nullptr, lenv* e = nullptr, lval* args = nullptr, lval
 lval* lval_num(double n = 0.0);
 lval* lval_str(std::string str = "");
 lval* lval_sym(std::string sym = "");
+lval* lval_bool(bool b = false);
 lval* lval_err(std::string err = "", ...);
 void lval_del(lval* v);
 

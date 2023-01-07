@@ -10,6 +10,7 @@ lval* read(const std::vector<std::string>& lst) {
     else if(qexp_p(exp)) return read_qexp(lst);
     else if(num_p(exp)) return read_num(exp);
     else if(str_p(exp)) return read_str(exp);
+    else if(bool_p(exp)) return read_bool(exp);
     else if(sym_p(exp)) return read_sym(exp);
 
     return lval_err("A syntax error has occured while reading expression %s", exp.c_str());
@@ -58,6 +59,10 @@ lval* read_sym(const std::string& exp) {
     return lval_sym(exp);
 }
 
+lval* read_bool(const std::string& exp) {
+    return lval_bool(exp == "true");
+}
+
 bool sexp_p(const std::string& exp) {
     return exp == "(";
 }
@@ -78,6 +83,10 @@ bool str_p(const std::string& exp) {
 
 bool sym_p(const std::string& exp) {
     return true;
+}
+
+bool bool_p(const std::string& exp) {
+    return exp == "true" || exp == "false";
 }
 
 std::vector<std::string> next_token(const std::vector<std::string>& lst, int s, int m) {

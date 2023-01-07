@@ -55,6 +55,14 @@ lval* lval_sym(std::string sym) {
     return v;
 }
 
+lval* lval_bool(bool b) {
+    lval* v = new lval();
+    v->type = ltype::BOOL;
+    v->b = b;
+
+    return v;
+}
+
 lval* lval_err(std::string err, ...) {
     lval* v = new lval();
     v->type = ltype::ERR;
@@ -88,6 +96,7 @@ void lval_del(lval* v) {
     case ltype::NUM: {} break;
     case ltype::STR: {} break;
     case ltype::SYM: {} break;
+    case ltype::BOOL: {} break;
     case ltype::ERR: {
 	free(v->err);
     } break;
@@ -104,6 +113,7 @@ std::string ltype_to_str(ltype type) {
     case ltype::NUM: { return "Number"; } break;
     case ltype::STR: { return "String"; } break;
     case ltype::SYM: { return "Symbol"; } break;
+    case ltype::BOOL: { return "Boolean"; } break;
     case ltype::ERR: { return "Error"; } break;
     }
 
@@ -149,6 +159,9 @@ void print_lval_rec(lval* val) {
     } break;
     case ltype::SYM: {
 	printf("SYM(%s)", val->sym.c_str());
+    } break;
+    case ltype::BOOL: {
+	printf("BOOL(%s)", val->b ? "true" : "false");
     } break;
     case ltype::ERR: {
 	printf("ERR(%s)", val->err);

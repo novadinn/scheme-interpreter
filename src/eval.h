@@ -11,6 +11,7 @@ lval* eval_fun(lval* v, lenv* e);
 lval* eval_num(lval* v, lenv* e);
 lval* eval_str(lval* v, lenv* e);
 lval* eval_sym(lval* v, lenv* e);
+lval* eval_bool(lval* v, lenv* e);
 lval* eval_err(lval* v, lenv* e);
 
 #endif // EVAL_H
