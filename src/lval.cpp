@@ -1,8 +1,9 @@
 #include "lval.h"
 
+#include "math.h"
+
 #include <cstring>
 #include <stdarg.h>
-#include <math.h>
 
 lval* lval_sexp(llist lst) {
     lval* v = new lval();
@@ -85,6 +86,47 @@ lval* lval_err(std::string err, ...) {
     return v;
 }
 
+bool lval_equal_e(lval* l, lval* r) {
+    if(l->type != r->type) return false;
+    switch(l->type) {
+    case ltype::QEXP: {
+	llist llst = l->lst;
+	llist rlst = r->lst;
+	if(llst.size() != rlst.size()) return false;
+	
+	for(int i = 0; i < llst.size(); ++i) {
+	    bool r = lval_equal_e(llst[i], rlst[i]);
+	    if(!r) return false;
+	}
+
+	return true;
+    } break;
+    case ltype::FUN: {
+	if(l->body && l->args && l->env)
+	    return l->body == r->body && l->args == r->args && l->env == r->env;
+	else
+	    return l->fun == r->fun;
+    } break;
+    case ltype::NUM: {
+	return l->num == r->num;
+    } break;
+    case ltype::STR: {
+	return l->str == r->str;
+    } break;
+    case ltype::SYM: {
+	return l->sym == r->sym;
+    } break;
+    case ltype::BOOL: {
+	return l->b == r->b;
+    } break;
+    case ltype::ERR: {
+	return l->err == r->err;
+    } break;
+    }
+
+    return false;
+}
+
 void lval_del(lval* v) {
     switch(v->type) {
     case ltype::SEXP: {
@@ -138,30 +180,84 @@ void print_lval(lval* val) {
 void print_lval_rec(lval* val) {
     switch(val->type) {
     case ltype::SEXP: {
-	printf("SEXP(");
+	printf("(");
 	for(int i = 0; i < val->lst.size(); ++i) {
 	    print_lval_rec(val->lst[i]);
+	    if(i != val->lst.size()-1)
+		printf(" ");
+	}
+	printf(")");
+    } break;
+    case ltype::QEXP: {
+	printf("'(");
+	for(int i = 0; i < val->lst.size(); ++i) {
+	    print_lval_rec(val->lst[i]);
+	    if(i != val->lst.size()-1)
+		printf(" ");
+	}
+	printf(")");
+    } break;
+    case ltype::FUN: {
+	printf("(lambda");
+	if(val->args && val->body) {
+	    printf("("); print_lval_rec(val->args); printf(")");
+	    printf("("); print_lval_rec(val->body); printf(")");
+	}
+	printf(")");
+    } break;
+    case ltype::NUM: {
+	if(int_p(val->num)) printf("%d", (int)val->num);
+	else printf("%lf", val->num);
+    } break;
+    case ltype::STR: {
+	printf("\"%s\"", val->str.c_str());
+    } break;
+    case ltype::VAR: {
+	printf("%s", val->vname.c_str());
+    } break;
+    case ltype::SYM: {
+	printf("'%s", val->sym.c_str());
+    } break;
+    case ltype::BOOL: {
+	printf("%s", val->b ? "true" : "false");
+    } break;
+    case ltype::ERR: {
+	printf("%s", val->err);
+    } break;
+    }    
+}
+
+void print_lval_t(lval* val) {
+    print_lval_t_rec(val);
+    printf("\n");
+}
+
+void print_lval_t_rec(lval* val) {
+    switch(val->type) {
+    case ltype::SEXP: {
+	printf("SEXP(");
+	for(int i = 0; i < val->lst.size(); ++i) {
+	    print_lval_t_rec(val->lst[i]);
 	}
 	printf(")");
     } break;
     case ltype::QEXP: {
 	printf("QEXP(");
 	for(int i = 0; i < val->lst.size(); ++i) {
-	    print_lval_rec(val->lst[i]);
+	    print_lval_t_rec(val->lst[i]);
 	}
 	printf(")");
     } break;
     case ltype::FUN: {
 	printf("FUN(");
 	if(val->args && val->body) {
-	    printf("ARGS("); print_lval_rec(val->args); printf(")");
-	    printf("BODY("); print_lval_rec(val->body); printf(")");
+	    printf("ARGS("); print_lval_t_rec(val->args); printf(")");
+	    printf("BODY("); print_lval_t_rec(val->body); printf(")");
 	}
 	printf(")");
     } break;
     case ltype::NUM: {
-	double ab = abs(val->num);
-	if(ab == floor(ab)) printf("NUM(%ld)", (long)val->num);
+	if(int_p(val->num)) printf("NUM(%d)", (int)val->num);
 	else printf("NUM(%lf)", val->num);
     } break;
     case ltype::STR: {

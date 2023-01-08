@@ -1,6 +1,7 @@
 #include "builtins.h"
 
 #include "log.h"
+#include "math.h"
 
 lval* builtin_add(lval* op, lenv* e) {
     llist lst = op->lst;
@@ -61,6 +62,17 @@ lval* builtin_div(lval* op, lenv* e) {
     return lval_num(res);
 }
 
+lval* builtin_list(lval* op, lenv* e) {
+    llist lst = op->lst;
+    llist res;
+    
+    for(int i = 0; i < lst.size(); ++i) {
+	res.push_back(eval(lst[i], e));
+    }
+    
+    return lval_qexp(res);
+}
+
 lval* builtin_car(lval* op, lenv* e) {
     llist lst = op->lst;
     LASSERT_ARGC("car", lst, 1);
@@ -92,7 +104,6 @@ lval* builtin_cons(lval* op, lenv* e) {
     
     lval* h = eval(lst[0], e);
     lval* tail = lst[1];
-    // TODO: add support for dotted lists
     LASSERT_TYPE("cons", 1, tail->type, ltype::QEXP);
     llist qexp = tail->lst;
 
@@ -196,36 +207,6 @@ lval* builtin_or(lval* op, lenv* e) {
     return lval_bool(false);
 }
 
-lval* builtin_even(lval* op, lenv* e) {
-    llist lst = op->lst;
-    LASSERT_ARGC("even?", lst, 1);
-    
-    lval* el = eval(lst[0], e);
-    LASSERT_TYPE("even?", 0, el->type, ltype::NUM);
-    
-    return lval_bool((int)el->num % 2 == 0);
-}
-
-lval* builtin_odd(lval* op, lenv* e) {
-    llist lst = op->lst;
-    LASSERT_ARGC("odd?", lst, 1);
-    
-    lval* el = eval(lst[0], e);
-    LASSERT_TYPE("odd?", 0, el->type, ltype::NUM);
-    
-    return lval_bool((int)el->num % 2 != 0);
-}
-
-lval* builtin_zero(lval* op, lenv* e) {
-    llist lst = op->lst;
-    LASSERT_ARGC("zero?", lst, 1);
-
-    lval* el = eval(lst[0], e);
-    LASSERT_TYPE("zero?", 0, el->type, ltype::NUM);
-    
-    return lval_bool(el->num == 0);
-}
-
 lval* builtin_e(lval* op, lenv* e) {
     llist lst = op->lst;
     LASSERT_NOT_EMPTY("=", lst, 0);
@@ -306,74 +287,300 @@ lval* builtin_l(lval* op, lenv* e) {
     return lval_bool(true);
 }
 
-lval* builtin_boolean(lval* op, lenv* e) {
+lval* builtin_even_p(lval* op, lenv* e) {
+    llist lst = op->lst;
+    LASSERT_ARGC("even?", lst, 1);
+    
+    lval* el = eval(lst[0], e);
+    LASSERT_TYPE("even?", 0, el->type, ltype::NUM);
+    
+    return lval_bool((int)el->num % 2 == 0);
+}
+
+lval* builtin_odd_p(lval* op, lenv* e) {
+    llist lst = op->lst;
+    LASSERT_ARGC("odd?", lst, 1);
+    
+    lval* el = eval(lst[0], e);
+    LASSERT_TYPE("odd?", 0, el->type, ltype::NUM);
+    
+    return lval_bool((int)el->num % 2 != 0);
+}
+
+lval* builtin_zero_p(lval* op, lenv* e) {
+    llist lst = op->lst;
+    LASSERT_ARGC("zero?", lst, 1);
+
+    lval* el = eval(lst[0], e);
+    LASSERT_TYPE("zero?", 0, el->type, ltype::NUM);
+    
+    return lval_bool(el->num == 0);
+}
+
+lval* builtin_boolean_p(lval* op, lenv* e) {
     llist lst = op->lst;
     LASSERT_ARGC("boolean?", lst, 1);
-    
-    return lval_bool(eval(lst[0], e)->type == ltype::BOOL);
+
+    lval* v = eval(lst[0], e);
+    LASSERT_W_ERROR(v);
+    return lval_bool(v->type == ltype::BOOL);
 }
 
-lval* builtin_integer(lval* op, lenv* e) {
+lval* builtin_integer_p(lval* op, lenv* e) {
     llist lst = op->lst;
     LASSERT_ARGC("integer?", lst, 1);
-    
-    return lval_bool(eval(lst[0], e)->type == ltype::NUM);
+
+    lval* v = eval(lst[0], e);
+    LASSERT_W_ERROR(v);
+    return lval_bool(v->type == ltype::NUM);
 }
 
-lval* builtin_list(lval* op, lenv* e) {
-    llist lst = op->lst;
-    LASSERT_ARGC("list?", lst, 1);
-    
-    return lval_bool(eval(lst[0], e)->type == ltype::QEXP);
-}
-
-lval* builtin_atom(lval* op, lenv* e) {
+lval* builtin_list_p(lval* op, lenv* e) {
     llist lst = op->lst;
     LASSERT_ARGC("list?", lst, 1);
 
     lval* v = eval(lst[0], e);
+    LASSERT_W_ERROR(v);
+    return lval_bool(v->type == ltype::QEXP);
+}
+
+lval* builtin_atom_p(lval* op, lenv* e) {
+    llist lst = op->lst;
+    LASSERT_ARGC("list?", lst, 1);
+
+    lval* v = eval(lst[0], e);
+    LASSERT_W_ERROR(v);
     ltype t = v->type;
     return lval_bool(t == ltype::BOOL || t == ltype::NUM ||
 		     t == ltype::SYM || t == ltype::STR ||
 		     (t == ltype::QEXP && v->lst.size() == 0));
 }
 
-lval* builtin_null(lval* op, lenv* e) {
+lval* builtin_null_p(lval* op, lenv* e) {
     llist lst = op->lst;
     LASSERT_ARGC("null?", lst, 1);
 
     lval* v = eval(lst[0], e);
-    
+    LASSERT_W_ERROR(v);
     return lval_bool(v->type == ltype::QEXP && v->lst.size() == 0);
 }
 
-lval* builtin_pair(lval* op, lenv* e) {
+lval* builtin_pair_p(lval* op, lenv* e) {
     llist lst = op->lst;
     LASSERT_ARGC("pair?", lst, 1);
 
     lval* v = eval(lst[0], e);
-    
+    LASSERT_W_ERROR(v);
     return lval_bool(v->type == ltype::QEXP && v->lst.size() != 0);
 }
 
-lval* builtin_procedure(lval* op, lenv* e) {
+lval* builtin_procedure_p(lval* op, lenv* e) {
     llist lst = op->lst;
     LASSERT_ARGC("procedure?", lst, 1);
 
-    return lval_bool(eval(lst[0], e)->type == ltype::FUN);
+    lval* v = eval(lst[0], e);
+    LASSERT_W_ERROR(v);
+    return lval_bool(v->type == ltype::FUN);
 }
 
-lval* builtin_string(lval* op, lenv* e) {
+lval* builtin_string_p(lval* op, lenv* e) {
     llist lst = op->lst;
     LASSERT_ARGC("string?", lst, 1);
     
-    return lval_bool(eval(lst[0], e)->type == ltype::STR);
+    lval* v = eval(lst[0], e);
+    LASSERT_W_ERROR(v);
+    return lval_bool(v->type == ltype::STR);
 }
 
-lval* builtin_symbol(lval* op, lenv* e) {
+lval* builtin_symbol_p(lval* op, lenv* e) {
     llist lst = op->lst;
     LASSERT_ARGC("symbol?", lst, 1);
 
-    // FIXME: not working rn
-    return lval_bool(eval(lst[0], e)->type == ltype::SYM);
+    lval* v = eval(lst[0], e);
+    LASSERT_W_ERROR(v);
+    return lval_bool(v->type == ltype::SYM);
+}
+
+lval* builtin_abs(lval* op, lenv* e) {
+    llist lst = op->lst;
+    LASSERT_ARGC("abs", lst, 1);
+
+    lval* v = eval(lst[0], e);
+    LASSERT_TYPE("abs", 0, v->type, ltype::NUM);
+
+    return lval_num(absolute(v->num));
+}
+
+lval* builtin_expt(lval* op, lenv* e) {
+    llist lst = op->lst;
+    LASSERT_ARGC("expt", lst, 2);
+
+    lval* l = eval(lst[0], e);
+    LASSERT_TYPE("expt", 0, l->type, ltype::NUM);
+    lval* r = eval(lst[1], e);
+    LASSERT_TYPE("expt", 0, r->type, ltype::NUM);
+
+    return lval_num(expt(l->num, r->num));
+}
+
+lval* builtin_modulo(lval* op, lenv* e) {
+    llist lst = op->lst;
+    LASSERT_ARGC("modulo", lst, 2);
+
+    lval* l = eval(lst[0], e);
+    LASSERT_TYPE("modulo", 0, l->type, ltype::NUM);
+    lval* r = eval(lst[1], e);
+    LASSERT_TYPE("modulo", 0, r->type, ltype::NUM);
+
+    return lval_num(mod(l->num, r->num));
+}
+
+lval* builtin_quotient(lval* op, lenv* e) {
+    llist lst = op->lst;
+    LASSERT_ARGC("quotient", lst, 2);
+
+    lval* l = eval(lst[0], e);
+    LASSERT_TYPE("quotient", 0, l->type, ltype::NUM);
+    lval* r = eval(lst[1], e);
+    LASSERT_TYPE("quotient", 0, r->type, ltype::NUM);
+
+    return lval_num(quot(l->num, r->num));
+}
+
+lval* builtin_remainder(lval* op, lenv* e) {
+    llist lst = op->lst;
+    LASSERT_ARGC("remainder", lst, 2);
+
+    lval* l = eval(lst[0], e);
+    LASSERT_TYPE("remainder", 0, l->type, ltype::NUM);
+    lval* r = eval(lst[1], e);
+    LASSERT_TYPE("remainder", 0, r->type, ltype::NUM);
+
+    return lval_num(rem(l->num, r->num));
+}
+
+lval* builtin_begin(lval* op, lenv* e) {
+    llist lst = op->lst;
+
+    for(int i = 0; i < lst.size() - 1; ++i) {
+	eval(lst[i], e);
+    }
+
+    return eval(lst[lst.size()-1], e);
+}
+
+lval* builtin_display(lval* op, lenv* e) {
+    llist lst = op->lst;
+    LASSERT_ARGC("display", lst, 1);
+
+    lval* v = eval(lst[0], e);
+    print_lval(v);
+    
+    return nullptr;
+}
+
+lval* builtin_error(lval* op, lenv* e) {
+    llist lst = op->lst;
+    LASSERT_ARGC("error", lst, 1);
+
+    lval* v = eval(lst[0], e);
+    LASSERT_TYPE("error", 0, v->type, ltype::STR);
+    
+    return lval_err(v->str);
+}
+
+lval* builtin_newline(lval* op, lenv* e) {
+    llist lst = op->lst;
+    LASSERT_ARGC("newline", lst, 0);
+    
+    printf("\n");
+    
+    return nullptr;
+}
+
+lval* builtin_eq_p(lval* op, lenv* e) {
+    llist lst = op->lst;
+    LASSERT_ARGC("eq?", lst, 2);
+
+    lval* l = eval(lst[0], e);
+    lval* r = eval(lst[1], e);
+
+    if(l == r) return lval_bool(true);
+
+    return lval_bool(lval_equal_e(l, r));
+}
+
+lval* builtin_equal_p(lval* op, lenv* e) {
+    llist lst = op->lst;
+    LASSERT_ARGC("eq?", lst, 2);
+
+    lval* l = eval(lst[0], e);
+    lval* r = eval(lst[1], e);
+
+    return lval_bool(lval_equal_e(l, r));
+}
+
+lval* builtin_set(lval* op, lenv* e) {
+    llist lst = op->lst;
+    LASSERT_ARGC("set!", lst, 2);
+
+    lval* l = lst[0];
+    LASSERT_TYPE("set!", 0, l->type, ltype::VAR);
+    lval* r = eval(lst[1], e);
+
+    lenv_set_lval(e, l->vname, r);
+    lval_del(l);
+    
+    return r;
+}
+
+lval* builtin_set_car(lval* op, lenv* e) {
+    llist lst = op->lst;
+    LASSERT_ARGC("set-car!", lst, 2);
+
+    lval* l = lst[0];
+    LASSERT_TYPE("set-car!", 0, l->type, ltype::VAR);
+    lval* le = eval(l, e);
+    LASSERT_TYPE("set-car!", 0, le->type, ltype::QEXP);
+    lval* r = eval(lst[1], e);
+
+    std::vector<lval*> qexp;
+    qexp.push_back(r);
+    for(int i = 1; i < le->lst.size(); ++i) {
+	qexp.push_back(le->lst[i]);
+    }
+    
+    lval* res = lval_qexp(qexp);
+    lenv_set_lval(e, l->vname, res);
+    lval_del(l);
+    
+    return res;
+}
+
+lval* builtin_set_cdr(lval* op, lenv* e) {
+    llist lst = op->lst;
+    LASSERT_ARGC("set-cdr!", lst, 2);
+
+    lval* l = lst[0];
+    LASSERT_TYPE("set-cdr!", 0, l->type, ltype::VAR);
+    lval* le = eval(l, e);
+    LASSERT_TYPE("set-cdr!", 0, le->type, ltype::QEXP);
+    lval* r = eval(lst[1], e);
+    
+    std::vector<lval*> qexp;
+    if(r->type == ltype::QEXP) {
+	qexp.push_back(le->lst[0]);
+	for(int i = 0; i < r->lst.size(); ++i) {
+	    qexp.push_back(r->lst[i]);
+	}
+    } else {
+	qexp.push_back(le->lst[0]);
+	qexp.push_back(r);
+    }
+
+    lval* res = lval_qexp(qexp);
+    lenv_set_lval(e, l->vname, res);
+    lval_del(l);
+    
+    return res;
 }

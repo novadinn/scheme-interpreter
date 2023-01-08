@@ -13,6 +13,9 @@
 	    func, lst.size(), num)
 #define LASSERT_NOT_EMPTY(func, lst, index)				\
     LASSERT(lst.size() != 0,						\
-	    "Function '%s' passed () for argument %i", func, index);
+	    "Function '%s' passed () for argument %i", func, index)
+#define LASSERT_W_ERROR(val)			\
+    if(val->type == ltype::ERR)			\
+	return val;
 
 #endif // LOG_H

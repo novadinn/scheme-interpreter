@@ -50,11 +50,14 @@ lval* lval_var(std::string vname = "");
 lval* lval_sym(std::string sym = "");
 lval* lval_bool(bool b = false);
 lval* lval_err(std::string err = "", ...);
+bool lval_equal_e(lval* l, lval* r);
 void lval_del(lval* v);
 
 std::string ltype_to_str(ltype type);
 
 void print_lval(lval* val);
 void print_lval_rec(lval* val);
+void print_lval_t(lval* val);
+void print_lval_t_rec(lval* val);
 
 #endif // LVAL_H
