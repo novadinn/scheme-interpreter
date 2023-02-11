@@ -200,8 +200,8 @@ void print_lval_rec(lval* val) {
     case ltype::FUN: {
 	printf("(lambda");
 	if(val->args && val->body) {
-	    printf("("); print_lval_rec(val->args); printf(")");
-	    printf("("); print_lval_rec(val->body); printf(")");
+	    print_lval_rec(val->args);
+	    print_lval_rec(val->body);
 	}
 	printf(")");
     } break;

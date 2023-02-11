@@ -72,48 +72,11 @@ int main(int argc, char** argv) {
 	printf("scheme> ");
 	getline(std::cin, input);
 	
-	std::vector<std::string> lst;
-	std::string cw;
-	
-	for(int i = 0; i < input.size(); ++i) {
-	    char s = input[i];
-	    
-	    if(s == '\'') {
-		cw += "'";
-		if(i != input.size()-1)
-		    if(input[i+1] == '(') {
-			cw += "(";
-			++i;
-			lst.push_back(cw);
-			cw.clear();
-		    }
-	    } else if(s == '(') {
-		lst.push_back("(");
-	    } else if(s == ')') {
-		if(!cw.empty()) {
-		    lst.push_back(cw);
-		    cw.clear();
-		}
-		lst.push_back(")");
-	    } else if(s == ' ') {
-		if(!cw.empty()) {
-		    lst.push_back(cw);
-		    cw.clear();
-		}
-	    } else {
-		cw += s;
-	    }
-	}
-
-	for(int i = 0; i < lst.size(); ++i) {
-	    printf("%s ", lst[i].c_str());
-	}
-	printf("\n");
-	
+	std::vector<std::string> lst = tokenize(input);
+	// TODO: check for syntax correctness in here
 	lval* ast = read(lst);
-	print_lval_t(ast);
 	lval* v = eval(ast, genv);
-	if(v) print_lval_t(v);
+	print_lval(v);
     }
 
     lenv_del(genv);

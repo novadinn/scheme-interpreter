@@ -24,7 +24,6 @@ bool sym_p(const std::string& exp);
 bool str_p(const std::string& exp);
 bool bool_p(const std::string& exp);
 
-std::vector<lval*> read_exp(const std::vector<std::string>& lst);
-std::vector<std::string> next_token(const std::vector<std::string>& lst, int s, int m);
+std::vector<std::string> tokenize(const std::string& exp);
 
 #endif // READ_H

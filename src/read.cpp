@@ -17,12 +17,65 @@ lval* read(const std::vector<std::string>& lst) {
     return lval_err("A syntax error has occured while reading expression %s", exp.c_str());
 }
 
-lval* read_sexp(const std::vector<std::string>& lst) {    
-    return lval_sexp(read_exp(lst));
+lval* read_sexp(const std::vector<std::string>& lst) {
+    std::vector<lval*> rest;
+    
+    for(int i = 1; i < lst.size()-1; ++i) {
+	std::vector<std::string> res;
+	int np = 0;
+    
+	for(int j = i; j < lst.size()-1; ++j) {
+	    std::string exp = lst[j];
+
+	    if(exp == "'(") {
+		++np;
+	    } else if(exp == "(") {
+		++np;
+	    } else if(exp == ")") {
+		--np;
+	    }
+
+	    if(np < 0) break;
+	    res.push_back(exp);
+	    if(np == 0) break;
+	}
+
+	i += res.size()-1;
+	if(res.size() > 0) rest.push_back(read(res));
+    }
+
+    return lval_sexp(rest);
 }
 
 lval* read_qexp(const std::vector<std::string>& lst) {
-    return lval_qexp(read_exp(lst));
+    std::vector<lval*> rest;
+    
+    for(int i = 1; i < lst.size()-1; ++i) {
+	std::vector<std::string> res;
+	int np = 0;
+    
+	for(int j = i; j < lst.size()-1; ++j) {
+	    std::string exp = lst[j];
+
+	    if(exp == "'(") {
+		++np;
+	    } else if(exp == "(") {
+		++np;
+		exp = "'" + exp;
+	    } else if(exp == ")") {
+		--np;
+	    }
+
+	    if(np < 0) break;
+	    res.push_back(exp);
+	    if(np == 0) break;
+	}
+
+	i += res.size()-1;
+	if(res.size() > 0) rest.push_back(read(res));
+    }
+
+    return lval_qexp(rest);
 }
 
 lval* read_num(const std::string& exp) {
@@ -75,40 +128,43 @@ bool bool_p(const std::string& exp) {
     return exp == "true" || exp == "false";
 }
 
-std::vector<lval*> read_exp(const std::vector<std::string>& lst) {
-    std::vector<lval*> rest;
-    
-    for(int i = 1; i < lst.size()-1; ++i) {
-	std::vector<std::string> t = next_token(lst, i, lst.size()-1);
-	i += t.size()-1;
-	if(t.size() > 0) rest.push_back(read(t));
-    }
-
-    return rest;
-}
-
-std::vector<std::string> next_token(const std::vector<std::string>& lst, int s, int m) {
-    std::vector<std::string> res;
-    int np = 0;
-    bool qexp = false;
-    
-    for(int i = s; i < m; ++i) {
-	std::string exp = lst[i];
-
-	if(exp == "'(" && !qexp) {
-	    ++np;
-	    qexp = true;
-	} else if(exp == "(") {
-	    ++np;
-	    if(qexp) exp = "'" + exp;
-	} else if(exp == ")") {
-	    --np;
+std::vector<std::string> tokenize(const std::string& exp) {
+    std::vector<std::string> lst;
+    std::string cw;
+	
+    for(int i = 0; i < exp.size(); ++i) {
+	char s = exp[i];
+	    
+	if(s == '\'') {
+	    cw += "'";
+	    if(i != exp.size()-1)
+		if(exp[i+1] == '(') {
+		    cw += "(";
+		    ++i;
+		    lst.push_back(cw);
+		    cw.clear();
+		}
+	} else if(s == '(') {
+	    lst.push_back("(");
+	} else if(s == ')') {
+	    if(!cw.empty()) {
+		lst.push_back(cw);
+		cw.clear();
+	    }
+	    lst.push_back(")");
+	} else if(s == ' ') {
+	    if(!cw.empty()) {
+		lst.push_back(cw);
+		cw.clear();
+	    }
+	} else {
+	    cw += s;
 	}
-
-	if(np < 0) break;
-	res.push_back(exp);
-	if(np == 0) break;
     }
-    
-    return res;
+
+    if(!cw.empty()) {
+	lst.push_back(cw);
+    }
+
+    return lst;
 }
